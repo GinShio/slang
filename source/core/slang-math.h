@@ -125,6 +125,59 @@ public:
         return (x & 0x0000003f);
     }
 
+    static inline int CountlZero32(unsigned int value)
+    {
+        if (!value)
+        {
+            return 32u;
+        }
+
+        // Use the intrinsic if available.
+#if __has_builtin(__builtin_clz) || defined(__GNUC__)
+        return __builtin_clz(value);
+#elif defined(_MSC_VER)
+        unsigned long index;
+        _BitScanReverse(&index, value);
+        return index ^ 31;
+#endif
+
+        // Fall back to the bisection method.
+        unsigned zeroBits = 0;
+        for (unsigned int shift = 32u >> 1; shift; shift >>= 1)
+        {
+            const unsigned int tmp = value >> shift;
+            if (tmp)
+            {
+                value = tmp;
+            }
+            else
+            {
+                zeroBits |= shift;
+            }
+        }
+        return zeroBits;
+    }
+
+    static inline int CountrZero32(unsigned int value)
+    {
+        if (!value)
+        {
+            return 32u;
+        }
+
+        // Use the intrinsic if available.
+#if __has_builtin(__builtin_ctz) || defined(__GNUC__)
+        return __builtin_ctz(value);
+#elif defined(_MSC_VER)
+        unsigned long index;
+        _BitScanForward(&index, value);
+        return index;
+#endif
+
+        // Fall back to the bisection method.
+        return Ones32(value);
+    }
+
     static inline unsigned int Log2Floor(unsigned int x)
     {
         x |= (x >> 1);
@@ -247,6 +300,13 @@ inline float HalfToFloat(unsigned short input)
     o.ivalue |= (input & 0x8000) << 16; // sign bit
     return o.fvalue;
 }
+
+unsigned short FloatToBfloat16(float val);
+float Bfloat16ToFloat(unsigned short val);
+unsigned char FloatToFloate4m3(float val);
+float Floate4m3ToFloat(unsigned char val);
+unsigned char FloatToFloate5m2(float val);
+float Floate5m2ToFloat(unsigned char val);
 
 class Random
 {
